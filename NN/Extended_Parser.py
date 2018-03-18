@@ -7,16 +7,22 @@ import DNN
 
 class Parser(object):
 
-    def __init__(self):
+    def __init__(self, option):
         """Initialises a new parser."""
         import Tagger
+        print(option)
         self.tagger = Tagger.Tagger()
-        #self.classifier = Tagger.Perceptron()
-        def one_hot_encode_object_array(arr):
-            uniques, ids = np.unique(arr, return_inverse=True)
-            return uniques,np_utils.to_categorical(ids, len(uniques))
-        self.uniques,self.number=one_hot_encode_object_array([0,1,2])
-        self.classifier=DNN.Classifier(self.uniques,6)
+        self.option = int(option)
+
+        if self.option == 1:
+            self.classifier = Tagger.Perceptron()
+        else:
+            def one_hot_encode_object_array(arr):
+                uniques, ids = np.unique(arr, return_inverse=True)
+                return uniques,np_utils.to_categorical(ids, len(uniques))
+            
+            self.uniques,self.number=one_hot_encode_object_array([0,1,2])
+            self.classifier=DNN.Classifier(self.uniques,10)
 
     def parse(self, words):
         pred_tree = [0] * len(words)
@@ -76,8 +82,10 @@ class Parser(object):
 
             gold = self.gold_move(i, stack, pred_tree, gold_tree)
             features = self.features(words, tags, i, stack, pred_tree)
-            self.classifier.update(features, self.number[gold])
-            #self.classifier.update(features, gold)
+            if self.option == 2:
+                self.classifier.update(features, self.number[gold])
+            if self.option == 1:
+                self.classifier.update(features, gold)
             i, stack, pred_tree = self.move(i, stack, pred_tree, gold)
 
         return (tags,pred_tree)
@@ -109,77 +117,69 @@ class Parser(object):
 
         features = []
 
-        if i >= len(words):
-            features.append('<EOS>')
-            features.append('<EOS>')
-        else:
-            features.append(words[i])
-            features.append(tags[i])
+        EMP = "<EMPTY>"
+        EOS = "<EOS>"
 
-        if len(stack) > 0:
-            features.append(words[stack[-1]])
-            features.append(tags[stack[-1]])
+        if len(parse) > i:
+            features += [(1, words[i])]
+            features += [(2, tags[i])]
         else:
-            features.append('<EMPTY>')
-            features.append('<EMPTY>')
+            features += [(1, EOS)]
+            features += [(2, EOS)]
 
-        if len(stack) > 1:
-            features.append(words[stack[-2]])
-            features.append(tags[stack[-2]])
+        if len(stack) < 2:
+            features += [(5, EMP)]
+            features += [(6, EMP)]
+
+            if len(stack) < 1:
+                features += [(3, EMP)]
+                features += [(4, EMP)]
+            else:
+                features += [(3, words[stack[-1]])]
+                features += [(4, tags[stack[-1]])]
         else:
-            features.append('<EMPTY>')
-            features.append('<EMPTY>')
+            features += [(3, words[stack[-1]])]
+            features += [(4, tags[stack[-1]])]
 
-        '''
+            features += [(5, words[stack[-2]])]
+            features += [(6, tags[stack[-2]])]
+
+
         if len(stack) > 0:
             distance = i - stack[-1]
-            leftW = '<EMPTY>'
-            leftP = '<EMPTY>'
+            leftW = EMP
+            leftP = EMP
             for k in range(1, stack[-1]):
                 if parse[k] == stack[-1]:
                     leftW = words[k]
                     leftP = tags[k]
                     break
-            rightW = '<EMPTY>'
-            rightP = '<EMPTY>'
-            for k in range(i-1, stack[-1], -1):
-                if parse[k] == stack[-1]:
-                    rightW = words[k]
-                    rightP = tags[k]
-                    break
+
             if len(parse) > i:
-                features += [(tags[stack[-1]], leftP, tags[i])]
-                features += [(words[stack[-1]], leftP, tags[i])]
-                features += [(tags[stack[-1]], leftW, tags[i])]
-                features += [(leftW)]
+                features += [(7, tags[stack[-1]], leftP, tags[i])]
+                features += [(8, words[stack[-1]], leftP, tags[i])]
+                features += [(9, tags[stack[-1]], leftW, tags[i])]
+                features += [(10, leftW)]
             else:
-                features += [(tags[stack[-1]], leftP, '<EMPTY>')]
-                features += [(words[stack[-1]], leftP, '<EMPTY>')]
-                features += [(tags[stack[-1]], leftW, '<EMPTY>')]
-                features += [(leftW)]
+                features += [(7, tags[stack[-1]], leftP, EMP)]
+                features += [(8, words[stack[-1]], leftP, EMP)]
+                features += [(9, tags[stack[-1]], leftW, EMP)]
+                features += [(10, leftW)]
         else:
             if len(parse) > i:
-                # 23: S0pS0lpN0p
-                features += [( '<EOS>', '<EMPTY>', tags[i])]
-                # 23.1: S0wS0lpN0p
-                features += [( '<EOS>', '<EMPTY>', tags[i])]
-                # 23.2: S0pS0lwN0p
-                features += [( '<EOS>', '<EMPTY>', tags[i])]
-                # 23.3: S0lw
-                features += ['<EMPTY>']
+                features += [(7, EOS, EMP, tags[i])]
+                features += [(8, EOS, EMP, tags[i])]
+                features += [(9, EOS, EMP, tags[i])]
+                features += [(10, EMP)]
             else:
-                # 23: S0pS0lpN0p
-                features += [('<EOS>', '<EMPTY>', '<EMPTY>')]
-                # 23: S0wS0lpN0p
-                features += [('<EOS>', '<EMPTY>', '<EMPTY>')]
-                # 23.2: S0pS0lwN0p
-                features += [('<EOS>', '<EMPTY>', '<EMPTY>')]
-                # 23.3: S0lw
-                features += ['<EMPTY>']
-        '''
+                features += [(7, EOS, EMP, EMP)]
+                features += [(8, EOS, EMP, EMP)]
+                features += [(9, EOS, EMP, EMP)]
+                features += [(10, EMP)]        
 
         return list(zip(range(len(features)), features))
 
     def finalize(self):
-        #self.classifier.finalize()
+        if self.option == 1:
+            self.classifier.finalize()
         self.tagger.finalize()

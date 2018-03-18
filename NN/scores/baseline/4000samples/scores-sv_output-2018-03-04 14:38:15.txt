@@ -1,2 +1,0 @@
-Tagging accuracy: 91.90%
-Unlabelled attachment score: 62.24%

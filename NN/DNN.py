@@ -15,7 +15,7 @@ class Classifier(object):
         self.model=Sequential()
         self.model.add(Embedding(50000,int(np.log(50000)+1),input_length=self.n))
         self.model.add(Flatten())
-        self.model.add(Dense(6))
+        self.model.add(Dense(12))
         self.model.add(Activation('sigmoid'))
         self.model.add(Dense(3))
         self.model.add(Activation('softmax'))

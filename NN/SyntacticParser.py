@@ -1,8 +1,9 @@
-def train(path, end=200, epochs=1):
+#option = 1 for perceptron #option = 2 for NN
+def train(path, end=200, epochs=1, option = 2):
 	import CONLLUIO
 	import Extended_Parser as Parser
-
-	par = Parser.Parser()
+    
+	par = Parser.Parser(option)
 	for k in range(epochs):
 		count = 0
 		for gold in CONLLUIO.read_file(path):
