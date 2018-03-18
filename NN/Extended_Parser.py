@@ -7,22 +7,26 @@ import DNN
 
 class Parser(object):
 
-    def __init__(self, option):
+    def __init__(self, option, feats):
         """Initialises a new parser."""
         import Tagger
         print(option)
         self.tagger = Tagger.Tagger()
-        self.option = int(option)
+        self.option = option
+        self.feats = feats
 
-        if self.option == 1:
+        if self.option == 0:
             self.classifier = Tagger.Perceptron()
-        else:
+        if self.option == 1:
             def one_hot_encode_object_array(arr):
                 uniques, ids = np.unique(arr, return_inverse=True)
                 return uniques,np_utils.to_categorical(ids, len(uniques))
             
             self.uniques,self.number=one_hot_encode_object_array([0,1,2])
-            self.classifier=DNN.Classifier(self.uniques,10)
+            if self.feats == 1:
+                self.classifier=DNN.Classifier(self.uniques,10)
+            else:
+                self.classifier=DNN.Classifier(self.uniques,6)
 
     def parse(self, words):
         pred_tree = [0] * len(words)
@@ -82,9 +86,9 @@ class Parser(object):
 
             gold = self.gold_move(i, stack, pred_tree, gold_tree)
             features = self.features(words, tags, i, stack, pred_tree)
-            if self.option == 2:
-                self.classifier.update(features, self.number[gold])
             if self.option == 1:
+                self.classifier.update(features, self.number[gold])
+            if self.option == 0:
                 self.classifier.update(features, gold)
             i, stack, pred_tree = self.move(i, stack, pred_tree, gold)
 
@@ -144,42 +148,42 @@ class Parser(object):
             features += [(5, words[stack[-2]])]
             features += [(6, tags[stack[-2]])]
 
+        if self.feats == 1:
+            if len(stack) > 0:
+                distance = i - stack[-1]
+                leftW = EMP
+                leftP = EMP
+                for k in range(1, stack[-1]):
+                    if parse[k] == stack[-1]:
+                        leftW = words[k]
+                        leftP = tags[k]
+                        break
 
-        if len(stack) > 0:
-            distance = i - stack[-1]
-            leftW = EMP
-            leftP = EMP
-            for k in range(1, stack[-1]):
-                if parse[k] == stack[-1]:
-                    leftW = words[k]
-                    leftP = tags[k]
-                    break
-
-            if len(parse) > i:
-                features += [(7, tags[stack[-1]], leftP, tags[i])]
-                features += [(8, words[stack[-1]], leftP, tags[i])]
-                features += [(9, tags[stack[-1]], leftW, tags[i])]
-                features += [(10, leftW)]
+                if len(parse) > i:
+                    features += [(7, tags[stack[-1]], leftP, tags[i])]
+                    features += [(8, words[stack[-1]], leftP, tags[i])]
+                    features += [(9, tags[stack[-1]], leftW, tags[i])]
+                    features += [(10, leftW)]
+                else:
+                    features += [(7, tags[stack[-1]], leftP, EMP)]
+                    features += [(8, words[stack[-1]], leftP, EMP)]
+                    features += [(9, tags[stack[-1]], leftW, EMP)]
+                    features += [(10, leftW)]
             else:
-                features += [(7, tags[stack[-1]], leftP, EMP)]
-                features += [(8, words[stack[-1]], leftP, EMP)]
-                features += [(9, tags[stack[-1]], leftW, EMP)]
-                features += [(10, leftW)]
-        else:
-            if len(parse) > i:
-                features += [(7, EOS, EMP, tags[i])]
-                features += [(8, EOS, EMP, tags[i])]
-                features += [(9, EOS, EMP, tags[i])]
-                features += [(10, EMP)]
-            else:
-                features += [(7, EOS, EMP, EMP)]
-                features += [(8, EOS, EMP, EMP)]
-                features += [(9, EOS, EMP, EMP)]
-                features += [(10, EMP)]        
+                if len(parse) > i:
+                    features += [(7, EOS, EMP, tags[i])]
+                    features += [(8, EOS, EMP, tags[i])]
+                    features += [(9, EOS, EMP, tags[i])]
+                    features += [(10, EMP)]
+                else:
+                    features += [(7, EOS, EMP, EMP)]
+                    features += [(8, EOS, EMP, EMP)]
+                    features += [(9, EOS, EMP, EMP)]
+                    features += [(10, EMP)]        
 
         return list(zip(range(len(features)), features))
 
     def finalize(self):
-        if self.option == 1:
+        if self.option == 0:
             self.classifier.finalize()
         self.tagger.finalize()

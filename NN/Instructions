@@ -5,10 +5,26 @@ To run the Syntactic Parser we need to provide it with 6 arguments.
 4)The test swedish corpus
 5)Number of training samples
 6)Number of epochs
+7)Option -0 for perceptron parser/ -1 for neural networkor parser
+8)Option -0 for basic features/ -1 for advanced features
 
 The application will automatically produce projectivized corpuses both for training and testing treebanks.
-The projectivized corpus will be saved in the "data" folder while the predicted tags-trees and scores will be saved in the "output" folder.
-There is also a scores folder which contains the scores from our tests.
+The projectivized corpus will be saved in the "data" folder while the scores will be saved in the "output" folder.
 
 An example execution is the following:
-python3 app.py data/en-ud-train-projective.conllu data/en-ud-dev.conllu data/sv_lines-ud-train.conllu data/sv_lines-ud-dev.conllu 4000 2
+	python3 app.py data/en-ud-train-projective.conllu data/en-ud-train.conllu data/sv_lines-ud-train.conllu data/sv_lines-ud-train.conllu 500 2 1 1
+
+Or just run:
+    	python3 app.py
+
+To run the program with its default settings.
+
+* Use of usual conllu files for training and testing from **data** folder
+
+* 2 epochs
+
+* 500 samples
+
+* Neural Network parser
+
+* Improved features
