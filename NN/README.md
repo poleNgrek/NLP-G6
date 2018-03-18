@@ -29,7 +29,6 @@ An example execution is the following:
 
 Or just run:
 ```
-
     python3 app.py
 ```
 
