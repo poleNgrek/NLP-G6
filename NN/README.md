@@ -1,6 +1,6 @@
 ## Instructions
 
-To run the Syntactic Parser we need to provide it with 6 arguments.
+To run the Syntactic Parser we need to provide it with 8 arguments.
 
 * The training english corpus
 
